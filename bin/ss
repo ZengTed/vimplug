@@ -1,0 +1,56 @@
+#!/bin/bash
+#Author: zengtao
+#2016.8.23
+
+if [ $# -eq 0 ]; then
+    echo "关键字快速查找文件/目录/文件内容/后缀名文件, 文件名和目录名均支持*通配符"
+    echo "ss -d <directory>"
+    echo "ss <file>"
+    echo "ss <[.]extention>"
+    echo "ss <file|extention, x(ml), j(ava)...> <content>"
+    echo "  For example:"
+    echo "      ss mk module_name"
+    echo "      ss java"
+    echo "      ss .c"
+    exit 0
+fi
+
+p1="$1"
+
+case "x$1" in
+    "xx"|"x-x") p1="xml" ;;
+    "xj"|"x-j") p1="java" ;;
+esac
+
+#含有.被理解为文件名完整
+isfile=`expr "$p1" : '.*\.[a-zA-z0-9]*'`
+#含有*被理解为用户指定的通配模式
+isstar=`expr "$p1" : '[^*]*[*][^*]*'`
+
+if [ $# -eq 1 ]; then
+    [ $isstar -gt 0 ] && find . -type f -iname "$p1" && exit 0
+    [ ${p1:0:1} = "." ] && find . -type f -iname "*$p1" && exit 0
+    [ $isfile -eq 0 ] && find . -type f -iname "*$p1*" && exit 0
+    
+    find . -iname "$p1"
+
+elif [ $# -eq 2 ]; then
+    p2="$2"
+    case "x$p1" in
+        "xd"|"x-d")
+            [ $isstar -gt 0 ] &&  find . -type d -name "$p2" && exit 0
+            find . -type d -name "*$p2*" && exit 0
+            ;;
+    esac
+
+    if [ $isstar -gt 0 ]; then
+        find . -type f -iname "$p1" | xargs grep -inE "$p2" --color=always 
+    elif [ $isfile -eq 0 ]; then
+        find . -type f -iname "*.$p1" | xargs grep -inE "$p2" --color=always
+    else
+        [ ${p1:0:1} = "." ] && p1="*$p1"
+        find . -type f -iname "$p1" | xargs grep -inE "$p2" --color=always
+    fi
+fi 
+
+exit 0
